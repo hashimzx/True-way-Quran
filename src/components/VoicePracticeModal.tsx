@@ -5,7 +5,6 @@ import { evaluatePronunciation, StudentVoiceRecorder } from '../utils/speechEval
 import confetti from 'canvas-confetti';
 import { 
   Mic, 
-  MicOff, 
   Volume2, 
   CheckCircle2, 
   AlertCircle, 
@@ -14,9 +13,7 @@ import {
   ChevronRight, 
   Play, 
   Square,
-  Sparkles,
-  Info,
-  Award
+  Sparkles
 } from 'lucide-react';
 
 interface VoicePracticeModalProps {
@@ -52,7 +49,6 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
   const recognitionRef = useRef<any>(null);
   const studentAudioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
-  // Reset state when word changes
   useEffect(() => {
     setAttemptResult(null);
     setSpokenTranscript('');
@@ -60,7 +56,6 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
     setErrorMessage(null);
   }, [word]);
 
-  // Clean up on unmount or close
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
@@ -77,21 +72,20 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
     setIsPlayingTeacherAudio(true);
     setSpeechRate(rate);
 
-    // If word has custom teacher voice URL, play that first
     if (word.teacherVoiceUrl) {
       const audio = new Audio(word.teacherVoiceUrl);
       audio.playbackRate = rate;
       audio.onended = () => setIsPlayingTeacherAudio(false);
       audio.onerror = async () => {
-        await soundEngine.speakArabic(word.arabic, rate);
+        await soundEngine.speakQaidaWord(word.arabic, rate);
         setIsPlayingTeacherAudio(false);
       };
       audio.play().catch(async () => {
-        await soundEngine.speakArabic(word.arabic, rate);
+        await soundEngine.speakQaidaWord(word.arabic, rate);
         setIsPlayingTeacherAudio(false);
       });
     } else {
-      await soundEngine.speakArabic(word.arabic, rate);
+      await soundEngine.speakQaidaWord(word.arabic, rate);
       setIsPlayingTeacherAudio(false);
     }
   };
@@ -101,7 +95,6 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
     setSpokenTranscript('');
     setAttemptResult(null);
 
-    // Initialize Web Speech Recognition
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     let rec: any = null;
@@ -114,13 +107,12 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
       recognitionRef.current = rec;
     }
 
-    // Initialize Audio Recorder for instant student playback
     const recorder = new StudentVoiceRecorder();
     recorderRef.current = recorder;
     const recorderStarted = await recorder.start();
 
     if (!recorderStarted && !rec) {
-      setErrorMessage('Microphone access denied or not supported in this browser. Please allow microphone permissions.');
+      setErrorMessage('Microphone access denied or not supported. Please enable microphone permissions in your browser.');
       return;
     }
 
@@ -141,7 +133,7 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
       rec.onerror = (event: any) => {
         console.warn('Speech recognition warning:', event.error);
         if (event.error === 'not-allowed') {
-          setErrorMessage('Microphone access blocked. Click the lock icon in your address bar to allow audio.');
+          setErrorMessage('Microphone access blocked. Click the lock icon in your browser address bar to allow audio.');
         }
       };
 
@@ -156,7 +148,6 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
       }
     }
 
-    // Auto stop after 3.5 seconds if user finishes reciting word
     setTimeout(() => {
       if (isRecording) {
         stopVoiceAssessment(transcriptDetected);
@@ -176,14 +167,12 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
       } catch {}
     }
 
-    // Stop audio recorder and get recording blob URL
     let recordedUrl: string | null = null;
     if (recorderRef.current) {
       recordedUrl = await recorderRef.current.stop();
       setStudentAudioUrl(recordedUrl);
     }
 
-    // Evaluate
     const rawTranscript = spokenTranscript || detectedTranscriptFallback || word.arabic;
     const attempt = evaluatePronunciation(rawTranscript, word, passingScore);
     if (recordedUrl) {
@@ -195,10 +184,10 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
     if (attempt.passed) {
       soundEngine.playCueSound('success');
       confetti({
-        particleCount: 75,
+        particleCount: 80,
         spread: 60,
         origin: { y: 0.6 },
-        colors: ['#dc2626', '#ffffff', '#fbbf24', '#10b981']
+        colors: ['#7c3aed', '#9333ea', '#c084fc', '#10b981', '#f59e0b']
       });
       onSuccess(attempt);
     } else {
@@ -226,27 +215,27 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-xl bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden my-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-purple-950/70 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-xl bg-white border border-purple-100 rounded-3xl shadow-2xl overflow-hidden my-6">
         
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-900/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-purple-100 bg-purple-50/60">
           <div className="flex items-center gap-2">
-            <span className="p-1.5 bg-red-600/20 text-red-500 rounded-lg">
-              <Mic className="w-5 h-5" />
+            <span className="p-1.5 bg-purple-600 text-white rounded-xl shadow-xs">
+              <Mic className="w-4 h-4" />
             </span>
             <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <h3 className="text-sm font-black text-purple-950">
                 Pronunciation Assessment Studio
               </h3>
-              <p className="text-xs text-zinc-400">
-                Minimum passing accuracy threshold: <span className="text-red-400 font-semibold">{passingScore}%</span>
+              <p className="text-[11px] text-purple-800">
+                Passing accuracy threshold: <span className="font-extrabold text-purple-900">{passingScore}%</span>
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-zinc-800 transition"
+            className="text-slate-400 hover:text-slate-800 p-1 rounded-lg hover:bg-slate-100 transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -256,84 +245,77 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
         <div className="p-6 space-y-6">
 
           {/* Target Word Showcase */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center relative overflow-hidden">
-            {/* Subtle radial background glow */}
-            <div className="absolute inset-0 bg-gradient-to-b from-red-950/20 to-transparent pointer-events-none" />
-
-            {/* Arabic Script */}
-            <div className="font-arabic text-7xl font-bold text-white tracking-wide py-4 select-none drop-shadow-md">
+          <div className="bg-purple-50/50 border border-purple-200/70 rounded-3xl p-6 text-center relative overflow-hidden">
+            <div className="font-arabic text-7xl font-bold text-purple-950 tracking-wide py-3 select-none drop-shadow-xs">
               {word.arabic}
             </div>
 
-            {/* Transliteration & Meaning */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-xl font-bold text-red-500">
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-xl font-black text-purple-700">
                 {word.transliteration}
               </span>
               {word.englishMeaning && (
-                <span className="text-xs text-zinc-400 italic">
+                <span className="text-xs text-slate-500 italic">
                   "{word.englishMeaning}"
                 </span>
               )}
             </div>
 
-            {/* Makhraj & Tajweed Rule Pill */}
-            <div className="mt-4 pt-4 border-t border-zinc-800/80 flex flex-col gap-2 text-xs text-zinc-300">
-              <div className="flex items-start justify-center gap-1.5 text-zinc-300">
-                <span className="text-red-400 font-semibold">Articulation Point (Makhraj):</span>
+            {/* Makhraj Note */}
+            <div className="mt-4 pt-3 border-t border-purple-100 flex flex-col gap-1 text-xs text-slate-700">
+              <div className="flex items-start justify-center gap-1.5">
+                <span className="text-purple-700 font-bold">Makhraj Point:</span>
                 <span>{word.makhraj}</span>
               </div>
               {word.tajweedRule && (
-                <div className="inline-flex items-center justify-center gap-1 text-zinc-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                  <span>{word.tajweedRule}</span>
+                <div className="text-[11px] text-purple-900 font-medium">
+                  • {word.tajweedRule}
                 </div>
               )}
             </div>
 
-            {/* Listen to Teacher Recitation Buttons */}
-            <div className="mt-5 flex items-center justify-center gap-3">
+            {/* Listen buttons */}
+            <div className="mt-4 flex items-center justify-center gap-2">
               <button
                 onClick={() => handlePlayTeacherAudio(0.85)}
                 disabled={isPlayingTeacherAudio}
-                className="flex items-center gap-2 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-xs font-semibold border border-zinc-700 hover:border-zinc-500 transition"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-purple-50 text-purple-950 rounded-xl text-xs font-bold border border-purple-200 shadow-xs transition"
               >
-                <Volume2 className="w-4 h-4 text-red-500" />
-                <span>{isPlayingTeacherAudio ? 'Playing...' : 'Listen (Normal Speed)'}</span>
+                <Volume2 className="w-3.5 h-3.5 text-purple-600" />
+                <span>{isPlayingTeacherAudio ? 'Playing...' : 'Listen Normal'}</span>
               </button>
 
               <button
                 onClick={() => handlePlayTeacherAudio(0.6)}
                 disabled={isPlayingTeacherAudio}
-                className="flex items-center gap-2 px-3.5 py-2 bg-zinc-800/60 hover:bg-zinc-700/60 text-zinc-300 hover:text-white rounded-lg text-xs font-semibold border border-zinc-800 transition"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-100/70 hover:bg-purple-200/70 text-purple-900 rounded-xl text-xs font-bold border border-purple-200 shadow-xs transition"
               >
-                <Volume2 className="w-3.5 h-3.5 text-amber-500" />
-                <span>Listen (Slow / Tarteel)</span>
+                <Volume2 className="w-3.5 h-3.5 text-amber-600" />
+                <span>Listen Slow / Tarteel</span>
               </button>
             </div>
           </div>
 
-          {/* Recording / Voice Assessment Zone */}
-          <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5 text-center">
-            {errorMessage ? (
-              <div className="text-xs text-red-400 bg-red-950/40 border border-red-800/50 p-3 rounded-lg mb-4 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+          {/* Recording & Mic Button */}
+          <div className="bg-white border border-purple-100 rounded-2xl p-5 text-center shadow-xs">
+            {errorMessage && (
+              <div className="text-xs text-red-600 bg-red-50 border border-red-200 p-3 rounded-xl mb-3 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
                 <span>{errorMessage}</span>
               </div>
-            ) : null}
+            )}
 
-            {/* Big Mic Button with Active Pulsing Ring */}
             <div className="flex flex-col items-center justify-center">
               <div className="relative my-2">
                 {isRecording && (
-                  <div className="absolute inset-0 rounded-full bg-red-600/40 animate-ping" />
+                  <div className="absolute inset-0 rounded-full bg-purple-500/30 animate-ping" />
                 )}
                 <button
                   onClick={isRecording ? () => stopVoiceAssessment() : startVoiceAssessment}
                   className={`relative z-10 w-20 h-20 rounded-full flex items-center justify-center transition-all transform active:scale-95 shadow-xl ${
                     isRecording
-                      ? 'bg-red-600 text-white ring-8 ring-red-600/30 glow-red'
-                      : 'bg-zinc-800 hover:bg-red-600 text-white border-2 border-red-600/40 hover:border-red-500'
+                      ? 'bg-purple-600 text-white ring-8 ring-purple-600/20 glow-purple'
+                      : 'bg-gradient-to-tr from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white'
                   }`}
                 >
                   {isRecording ? (
@@ -344,34 +326,34 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
                 </button>
               </div>
 
-              <div className="mt-3">
-                <p className="text-sm font-semibold text-white">
-                  {isRecording ? 'Listening... Speak into your microphone' : 'Press to Pronounce'}
+              <div className="mt-2">
+                <p className="text-sm font-bold text-purple-950">
+                  {isRecording ? 'Listening... Recite Arabic word now' : 'Click to Recite with Microphone'}
                 </p>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   {isRecording
-                    ? 'Recite the Arabic word clearly. Click stop when finished.'
+                    ? 'Speak clearly into your microphone.'
                     : 'Your voice will be analyzed against authentic Tajweed articulation.'}
                 </p>
               </div>
             </div>
 
-            {/* Student Recording Playback if available */}
+            {/* Student Recording Playback */}
             {studentAudioUrl && (
-              <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-center gap-3">
-                <span className="text-xs text-zinc-400">Your Recording:</span>
+              <div className="mt-4 pt-3 border-t border-purple-100 flex items-center justify-center gap-3">
+                <span className="text-xs text-slate-500">Your Recording:</span>
                 <button
                   onClick={toggleStudentAudio}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-md text-xs font-medium border border-zinc-700 transition"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-950 rounded-lg text-xs font-bold border border-purple-200 transition"
                 >
                   {isPlayingStudentAudio ? (
                     <>
-                      <Square className="w-3.5 h-3.5 text-red-400" />
-                      <span>Pause Playback</span>
+                      <Square className="w-3.5 h-3.5 text-purple-600" />
+                      <span>Pause</span>
                     </>
                   ) : (
                     <>
-                      <Play className="w-3.5 h-3.5 text-emerald-400" />
+                      <Play className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Play My Voice</span>
                     </>
                   )}
@@ -380,82 +362,76 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
             )}
           </div>
 
-          {/* Assessment Results & Makhraj Feedback */}
+          {/* Results feedback */}
           {attemptResult && (
             <div
-              className={`rounded-xl border p-5 transition-all ${
+              className={`rounded-2xl border p-5 transition-all ${
                 attemptResult.passed
-                  ? 'bg-zinc-900 border-emerald-600/50 shadow-lg'
-                  : 'bg-zinc-900 border-red-800/60 shadow-lg'
+                  ? 'bg-emerald-50/70 border-emerald-200 shadow-sm'
+                  : 'bg-purple-50/70 border-purple-200 shadow-sm'
               }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg border-2 ${
+                    className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-lg border-2 ${
                       attemptResult.passed
-                        ? 'border-emerald-500 text-emerald-400 bg-emerald-950/40'
-                        : 'border-red-500 text-red-400 bg-red-950/40'
+                        ? 'border-emerald-500 text-emerald-700 bg-emerald-100'
+                        : 'border-purple-500 text-purple-800 bg-purple-100'
                     }`}
                   >
                     {attemptResult.score}%
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                       {attemptResult.passed ? (
                         <>
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                           <span>Makhraj Verified · Passed!</span>
                         </>
                       ) : (
                         <>
-                          <AlertCircle className="w-4 h-4 text-red-500" />
+                          <AlertCircle className="w-4 h-4 text-purple-700" />
                           <span>Threshold Not Met · Try Again</span>
                         </>
                       )}
                     </h4>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-slate-500">
                       {attemptResult.passed
                         ? `Great job! Met the ${passingScore}% requirement.`
-                        : `Target is ${passingScore}%. Repeat as many times as needed to master.`}
+                        : `Target is ${passingScore}%. Repeat as needed to master.`}
                     </p>
                   </div>
                 </div>
 
                 <button
                   onClick={startVoiceAssessment}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-semibold border border-zinc-700 transition"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-purple-50 text-purple-900 rounded-xl text-xs font-bold border border-purple-200 transition"
                 >
-                  <RotateCcw className="w-3.5 h-3.5 text-red-500" />
-                  <span>Retry Word</span>
+                  <RotateCcw className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Retry</span>
                 </button>
               </div>
 
-              {/* Detailed Guidance */}
-              <div className="mt-4 pt-3 border-t border-zinc-800 space-y-2 text-xs">
-                <p className="text-zinc-200 font-medium leading-relaxed">
+              <div className="mt-3 pt-3 border-t border-purple-100 space-y-1.5 text-xs">
+                <p className="text-slate-800 font-medium">
                   {attemptResult.makhrajFeedback}
                 </p>
-
-                {attemptResult.tajweedNotes.length > 0 && (
-                  <div className="space-y-1">
-                    {attemptResult.tajweedNotes.map((note, idx) => (
-                      <div key={idx} className="flex items-start gap-2 text-zinc-400">
-                        <span className="text-red-500 font-bold">•</span>
-                        <span>{note}</span>
-                      </div>
-                    ))}
+                {attemptResult.tajweedNotes.map((note, idx) => (
+                  <div key={idx} className="flex items-start gap-1.5 text-slate-600">
+                    <span className="text-purple-600 font-bold">•</span>
+                    <span>{note}</span>
                   </div>
-                )}
+                ))}
               </div>
             </div>
           )}
 
-          {/* Action Buttons */}
+          {/* Action buttons */}
           <div className="flex items-center justify-between pt-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white transition"
+              className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-purple-950 transition"
             >
               Close Studio
             </button>
@@ -463,7 +439,7 @@ export const VoicePracticeModal: React.FC<VoicePracticeModalProps> = ({
             {hasNextWord && attemptResult?.passed && (
               <button
                 onClick={onNextWord}
-                className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-lg hover:shadow-red-600/30 transition"
+                className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md transition"
               >
                 <span>Next Word</span>
                 <ChevronRight className="w-4 h-4" />

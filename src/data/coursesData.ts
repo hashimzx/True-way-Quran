@@ -1,4 +1,4 @@
-import { Course } from '../types';
+import { Course, SubscriptionTier } from '../types';
 
 export const COURSES_DATA: Course[] = [
   {
@@ -210,21 +210,7 @@ export const COURSES_DATA: Course[] = [
   }
 ];
 
-export interface SubscriptionTier {
-  id: 'monthly' | 'quarterly' | 'annual';
-  name: string;
-  tagline: string;
-  badge?: string;
-  prices: {
-    USD: number;
-    GBP: number;
-    EUR: number;
-    CAD: number;
-    AUD: number;
-  };
-  period: string;
-  features: string[];
-}
+export type { SubscriptionTier } from '../types';
 
 export const SUBSCRIPTION_TIERS: SubscriptionTier[] = [
   {

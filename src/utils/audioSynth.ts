@@ -1,10 +1,58 @@
 /**
- * High quality Arabic audio playback engine for True Way Growth.
+ * High quality Arabic audio playback engine for True Way Quran.
  * Supports:
- * - Web Speech Synthesis for crystal clear Arabic pronunciation at configurable speeds (normal & slow/tarteel)
- * - Custom recorded Teacher Audio playback
- * - Web Audio API acoustic chime & harmonic tajweed cue sounds
+ * - Authentic Madani Qaida Qari pronunciation with proper letter phoneme names
+ * - Web Speech Synthesis with native Arabic vocal tuning
+ * - Web Audio API acoustic chime & harmonic Tajweed cue sounds
+ * - Teacher custom recorded recitations
  */
+
+const QAIDA_LETTER_PHONETICS: Record<string, string> = {
+  'ا': 'أَلِف',
+  'ب': 'بَاء',
+  'ت': 'تَاء',
+  'ث': 'ثَاء',
+  'ج': 'جِيم',
+  'ح': 'حَاء',
+  'خ': 'خَاء',
+  'د': 'دَال',
+  'ذ': 'ذَال',
+  'ر': 'رَاء',
+  'ز': 'زَاي',
+  'س': 'سِين',
+  'ش': 'شِين',
+  'ص': 'صَاد',
+  'ض': 'ضَاد',
+  'ط': 'طَاء',
+  'ظ': 'ظَاء',
+  'ع': 'عَيْن',
+  'غ': 'غَيْن',
+  'ف': 'فَاء',
+  'ق': 'قَاف',
+  'ك': 'كَاف',
+  'ل': 'لَام',
+  'م': 'مِيم',
+  'ن': 'نُون',
+  'و': 'وَاو',
+  'ه': 'هَاء',
+  'ء': 'هَمْزَة',
+  'ي': 'يَاء',
+  'ى': 'أَلِف مَقْصُورَة',
+  'ة': 'تَاء مَرْبُوطَة',
+  'آ': 'أَلِف مَدَّة',
+  'ٱ': 'هَمْزَةُ الْوَصْل',
+  'لا': 'لَام أَلِف',
+  'با': 'بَاء أَلِف',
+  'تا': 'تَاء أَلِف',
+  'ثا': 'ثَاء أَلِف',
+  'بل': 'بَاء لَام',
+  'جا': 'جِيم أَلِف',
+  'حق': 'حَاء قَاف',
+  'خب': 'خَاء بَاء',
+  'نل': 'نُون لَام',
+  'يل': 'يَاء لَام',
+  'ال': 'أَلِف لَام'
+};
 
 class AudioEngine {
   private ctx: AudioContext | null = null;
@@ -18,6 +66,14 @@ class AudioEngine {
       this.ctx.resume();
     }
     return this.ctx;
+  }
+
+  /**
+   * Speaks authentic Madani Qaida letter or compound word
+   */
+  public speakQaidaWord(rawArabic: string, rate: number = 0.85): Promise<void> {
+    const phoneticText = QAIDA_LETTER_PHONETICS[rawArabic.trim()] || rawArabic;
+    return this.speakArabic(phoneticText, rate);
   }
 
   /**
@@ -35,12 +91,18 @@ class AudioEngine {
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'ar-SA';
-      utterance.rate = rate; // slightly deliberate for student clarity
+      utterance.rate = rate; // deliberate pacing for clear tajweed
       utterance.pitch = 1.0;
 
-      // Try to find native Arabic voice if available
+      // Select Arabic voice if available in system
       const voices = window.speechSynthesis.getVoices();
-      const arabicVoice = voices.find(v => v.lang.startsWith('ar') || v.name.toLowerCase().includes('arabic') || v.name.toLowerCase().includes('maged') || v.name.toLowerCase().includes('tarik'));
+      const arabicVoice = voices.find(v => 
+        v.lang.startsWith('ar') || 
+        v.name.toLowerCase().includes('arabic') || 
+        v.name.toLowerCase().includes('maged') || 
+        v.name.toLowerCase().includes('tarik') ||
+        v.name.toLowerCase().includes('laila')
+      );
       if (arabicVoice) {
         utterance.voice = arabicVoice;
       }
@@ -67,7 +129,6 @@ class AudioEngine {
       const now = ctx.currentTime;
 
       if (type === 'success') {
-        // Melodious ascending chime: C5 -> E5 -> G5
         osc.type = 'sine';
         osc.frequency.setValueAtTime(523.25, now);
         osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.12);
@@ -80,7 +141,6 @@ class AudioEngine {
         osc.start(now);
         osc.stop(now + 0.5);
       } else if (type === 'retry') {
-        // Soft encouraging lower chime
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(392.00, now);
         osc.frequency.linearRampToValueAtTime(329.63, now + 0.18);
@@ -106,9 +166,7 @@ class AudioEngine {
         osc.start(now);
         osc.stop(now + 0.15);
       }
-    } catch {
-      // AudioContext unavailable or restricted
-    }
+    } catch {}
   }
 
   private playFallbackTone(freq: number, duration: number) {
@@ -123,9 +181,7 @@ class AudioEngine {
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
       osc.start();
       osc.stop(ctx.currentTime + duration);
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 }
 

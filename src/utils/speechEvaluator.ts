@@ -136,6 +136,69 @@ export function evaluatePronunciation(
   };
 }
 
+export interface AyahAssessmentResult {
+  score: number;
+  passed: boolean;
+  spokenText: string;
+  expectedText: string;
+  feedback: string;
+  details: string[];
+}
+
+/**
+ * Evaluates spoken recitation for a full Quran Ayah.
+ * If spoken wrong, detects errors and strictly enforces passed=false so student cannot advance.
+ */
+export function evaluateAyahPronunciation(
+  spoken: string,
+  ayahArabic: string,
+  ayahTransliteration: string,
+  threshold: number = 75
+): AyahAssessmentResult {
+  const normSpoken = normalizeArabic(spoken);
+  const normExpected = normalizeArabic(ayahArabic);
+
+  let sim = stringSimilarity(normSpoken, normExpected);
+
+  // Phonetic check on transliteration
+  const spokenLower = spoken.toLowerCase().trim();
+  const translitLower = ayahTransliteration.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+  const phonSim = stringSimilarity(spokenLower, translitLower);
+
+  const bestSim = Math.max(sim, phonSim);
+  let score = Math.round(bestSim * 100);
+
+  // If recognition gave partial syllables
+  if (score < 40 && spoken.trim().length > 3) {
+    score = 45; // baseline effort detected
+  }
+
+  score = Math.min(100, Math.max(15, score));
+  const passed = score >= threshold;
+
+  const details: string[] = [];
+  let feedback = '';
+
+  if (passed) {
+    feedback = `MashaAllah! Accurate recitation (${score}% accuracy). Articulation and rhythm meet the required standard.`;
+    details.push('Correct pronunciation of verse letters.');
+    details.push('Passing threshold fulfilled — next Ayah unlocked!');
+  } else {
+    feedback = `Pronunciation error detected (${score}% accuracy). Target threshold is ${threshold}%. You cannot advance to the next step until this Ayah is recited correctly.`;
+    details.push('Noticeable errors or omissions in letter articulation or vowels.');
+    details.push('Please listen to the scholar recitation, repeat aloud, and recite again.');
+  }
+
+  return {
+    score,
+    passed,
+    spokenText: spoken || '(Voice not clearly captured)',
+    expectedText: ayahArabic,
+    feedback,
+    details
+  };
+}
+
 /**
  * Audio Recorder wrapper for capturing student voice and generating blob playback
  */

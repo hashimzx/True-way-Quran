@@ -113,3 +113,20 @@ export interface LiveBooking {
   courseTitle: string;
   status: 'confirmed' | 'pending' | 'completed';
 }
+
+export interface SubscriptionTier {
+  id: 'monthly' | 'quarterly' | 'annual';
+  name: string;
+  tagline: string;
+  badge?: string;
+  prices: {
+    USD: number;
+    GBP: number;
+    EUR: number;
+    CAD: number;
+    AUD: number;
+  };
+  period: string;
+  features: string[];
+}
+
