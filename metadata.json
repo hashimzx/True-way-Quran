@@ -1,0 +1,6 @@
+{
+  "name": "True Way Growth",
+  "description": "International Online Quran Learning Platform with interactive Madani Qaida, AI-powered voice pronunciation assessment, international scheduling, and Islamic learning resources.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
